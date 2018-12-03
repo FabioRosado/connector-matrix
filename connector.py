@@ -48,7 +48,8 @@ def parse_room_config(config):
 
 
 class ConnectorMatrix(Connector):
-    def __init__(self, config):
+    def __init__(self, config, opsdroid=None):
+        super().__init__(config, opsdroid=opsdroid)
         # Init the config for the connector
         self.name = "ConnectorMatrix"  # The name of your connector
 
@@ -113,7 +114,7 @@ class ConnectorMatrix(Connector):
 
         return resp['filter_id']
 
-    async def connect(self, opsdroid):
+    async def connect(self):
         # Create connection object with chat library
         session = aiohttp.ClientSession()
         mapi = AsyncHTTPAPI(self.homeserver, session)
@@ -141,7 +142,7 @@ class ConnectorMatrix(Connector):
         if self.nick and await self.connection.get_display_name(self.mxid) != self.nick:
             await self.connection.set_display_name(self.mxid, self.nick)
 
-    async def listen(self, opsdroid):
+    async def listen(self):
         # Listen for new messages from the chat service
         while True:
             try:
@@ -162,7 +163,7 @@ class ConnectorMatrix(Connector):
                                                                            event['sender']),
                                                       roomid, self,
                                                       raw_message=event)
-                                    await opsdroid.parse(message)
+                                    await self.opsdroid.parse(message)
             except Exception:
                 _LOGGER.exception('Matrix Sync Error')
 
@@ -248,7 +249,7 @@ class ConnectorMatrix(Connector):
                 "m.room.message",
                 await self._get_html_content(message.text, msgtype=msgtype))
 
-    async def disconnect(self, opsdroid=None):
+    async def disconnect(self):
         self.session.close()
 
     def get_roomname(self, room):
